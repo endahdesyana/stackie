@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2D Stack Pastel Game</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #fdf6f0;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      background-color: #fff;
+      display: block;
+      margin: 0 auto;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      font-weight: bold;
+      color: #888;
+    }
+
+    #playButton, #gameOverText {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 28px;
+    }
+
+    #playButton {
+      top: 50%;
+      background-color: #ffe5ec;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #444;
+    }
+
+    #gameOverText {
+      top: 40%;
+      color: #ff7a7a;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="gameCanvas"></canvas>
+  <div id="score">0</div>
+  <div id="gameOverText">Game Over</div>
+  <button id="playButton">Play</button>
+
+  <audio id="bgMusic" loop autoplay>
+    <source src="2024-05-21_-_Step-by-step_-_www.FesliyanStudios.com.mp3" type="audio/mp3">
+  </audio>
+  
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const playButton = document.getElementById('playButton');
+    const gameOverText = document.getElementById('gameOverText');
+    const bgMusic = document.getElementById('bgMusic');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+    });
+
+    let stack = [];
+    let currentBlock = null;
+    let animationId;
+    let score = 0;
+    let speed = 4;
+
+    const pastelColors = ['#fcbad3', '#ffdac1', '#cceabb', '#bae1ff', '#e2f0cb'];
+
+    function createBase() {
+      return {
+        x: (canvas.width - 300) / 2,
+        y: canvas.height - 40,
+        width: 300,
+        height: 20,
+        color: '#b5ead7',
+      };
+    }
+
+    function createBlock(y, dir) {
+      const width = stack.length === 0 ? 300 : stack[stack.length - 1].width;
+      const xPosition = dir === 'left' ? 0 : canvas.width - width;
+      return {
+        x: xPosition,
+        y: y,
+        width: width,
+        height: 20,
+        dir: dir,
+        color: pastelColors[Math.floor(Math.random() * pastelColors.length)],
+      };
+    }
+
+    function drawBlock(block) {
+      ctx.fillStyle = block.color;
+      ctx.fillRect(block.x, block.y, block.width, block.height);
+    }
+
+    function resetGame() {
+      stack = [];
+      currentBlock = null;
+      score = 0;
+      speed = 4;
+      gameOverText.style.display = 'none';
+      playButton.style.display = 'none';
+      scoreDisplay.textContent = score;
+      bgMusic.play();
+      startGame();
+    }
+
+    function startGame() {
+      const base = createBase();
+      stack.push(base);
+      currentBlock = createBlock(base.y - 20, 'left');
+      animate();
+    }
+
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (currentBlock.x + currentBlock.width >= canvas.width || currentBlock.x <= 0) {
+        currentBlock.dir = currentBlock.dir === 'left' ? 'right' : 'left';
+      }
+      currentBlock.x += speed * (currentBlock.dir === 'left' ? -1 : 1);
+
+      // Gambar kotak dasar dan kotak aktif
+      stack.forEach(drawBlock);
+      drawBlock(currentBlock);
+    }
+
+    function placeBlock() {
+      playClickSound();
+      cancelAnimationFrame(animationId);
+
+      const topBlock = stack[stack.length - 1];
+      const delta = currentBlock.x - topBlock.x;
+      const tolerance = Math.abs(delta);
+      const overlap = currentBlock.width - tolerance;
+
+      if (overlap <= 0) {
+        gameOver();
+        return;
+      }
+
+      currentBlock.width = overlap;
+      currentBlock.x = delta > 0 ? currentBlock.x : topBlock.x;
+      stack.push(currentBlock);
+      score++;
+      scoreDisplay.textContent = score;
+      currentBlock = createBlock(currentBlock.y - 20, currentBlock.dir === 'left' ? 'right' : 'left');
+      animate();
+    }
+
+    function gameOver() {
+      gameOverText.style.display = 'block';
+      playButton.style.display = 'block';
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    }
+
+    canvas.addEventListener('click', placeBlock);
+    playButton.addEventListener('click', resetGame);
+
+    function playClickSound() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.1);
+    }
+  </script>
+
+</body>
+</html>
