@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>2D Stack Pastel Game</title>
   <style>
     body {
@@ -12,11 +13,9 @@
     }
 
     #gameCanvas {
-      background-color: #fff;
       display: block;
       margin: 0 auto;
-      width: 100vw;
-      height: 100vh;
+      background-color: #fff;
     }
 
     #score {
@@ -27,6 +26,7 @@
       font-size: 24px;
       font-weight: bold;
       color: #888;
+      z-index: 2;
     }
 
     #playButton, #gameOverText {
@@ -35,6 +35,7 @@
       transform: translateX(-50%);
       text-align: center;
       font-size: 28px;
+      z-index: 2;
     }
 
     #playButton {
@@ -62,9 +63,8 @@
   <button id="playButton">Play</button>
 
   <audio id="bgMusic" loop autoplay>
-    <source src="2024-05-21_-_Step-by-step_-_www.FesliyanStudios.com.mp3" type="audio/mp3">
+    <source src="2024-05-21_-_Step-by-step_-_www.FesliyanStudios.com.mp3" type="audio/mp3" />
   </audio>
-  
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -75,13 +75,16 @@
     const bgMusic = document.getElementById('bgMusic');
 
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+      ctx.scale(dpr, dpr); // scale for high-DPI
     }
     resizeCanvas();
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-    });
+    window.addEventListener('resize', resizeCanvas);
 
     let stack = [];
     let currentBlock = null;
@@ -93,8 +96,8 @@
 
     function createBase() {
       return {
-        x: (canvas.width - 300) / 2,
-        y: canvas.height - 40,
+        x: (canvas.width / window.devicePixelRatio - 300) / 2,
+        y: canvas.height / window.devicePixelRatio - 40,
         width: 300,
         height: 20,
         color: '#b5ead7',
@@ -103,7 +106,7 @@
 
     function createBlock(y, dir) {
       const width = stack.length === 0 ? 300 : stack[stack.length - 1].width;
-      const xPosition = dir === 'left' ? 0 : canvas.width - width;
+      const xPosition = dir === 'left' ? 0 : canvas.width / window.devicePixelRatio - width;
       return {
         x: xPosition,
         y: y,
@@ -142,12 +145,11 @@
       animationId = requestAnimationFrame(animate);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (currentBlock.x + currentBlock.width >= canvas.width || currentBlock.x <= 0) {
+      if (currentBlock.x + currentBlock.width >= canvas.width / window.devicePixelRatio || currentBlock.x <= 0) {
         currentBlock.dir = currentBlock.dir === 'left' ? 'right' : 'left';
       }
       currentBlock.x += speed * (currentBlock.dir === 'left' ? -1 : 1);
 
-      // Gambar kotak dasar dan kotak aktif
       stack.forEach(drawBlock);
       drawBlock(currentBlock);
     }
@@ -198,6 +200,5 @@
       osc.stop(ctx.currentTime + 0.1);
     }
   </script>
-
 </body>
 </html>
